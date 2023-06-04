@@ -25,8 +25,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip3 install --upgrade pip
 
-RUN pip3 install https://download.pytorch.org/whl/cu100/torch-1.1.0-cp36-cp36m-linux_x86_64.whl \
-  && pip3 install https://download.pytorch.org/whl/cu100/torchvision-0.3.0-cp36-cp36m-linux_x86_64.whl
+#RUN pip3 install https://download.pytorch.org/whl/cu100/torch-1.1.0-cp36-cp36m-linux_x86_64.whl \
+ # && pip3 install https://download.pytorch.org/whl/cu100/torchvision-0.3.0-cp36-cp36m-linux_x86_64.whl
+
+RUN pip3 install torch==1.9.0
+RUN pip3 install torchvision==0.9.1
 
 WORKDIR /workspace
 

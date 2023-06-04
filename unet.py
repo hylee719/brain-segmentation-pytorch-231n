@@ -98,6 +98,7 @@
 #         )
 from collections import OrderedDict
 import torch
+print(torch.__version__)
 import torch.nn as nn
 from torch.nn import Transformer
 
