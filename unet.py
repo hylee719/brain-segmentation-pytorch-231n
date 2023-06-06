@@ -106,18 +106,30 @@ from vit_pytorch import ViT
 class ViTEncoder(nn.Module):
     def __init__(self, in_channels=3, features=32):
         super(ViTEncoder, self).__init__()
+        # self.vit = ViT(
+        #     image_size=256,
+        #     patch_size=16,
+        #     num_classes=1000,
+        #     dim=768,
+        #     depth=12,
+        #     heads=12,
+        #     mlp_dim=3072,
+        #     pool="cls",
+        #     channels=in_channels,
+        # )
+        # self.linear = nn.Linear(768, features)
         self.vit = ViT(
             image_size=256,
             patch_size=16,
-            num_classes=1000,
-            dim=768,
-            depth=12,
-            heads=12,
-            mlp_dim=3072,
+            num_classes=1,  # Set to 1 for binary segmentation (out_channels=1)
+            dim=32,  # Use the same value as the init_features in the UNet
+            depth=8,  # Set based on the number of encoder and decoder blocks in the UNet
+            heads=12,  # Experiment with different values to find the optimal number of heads
+            mlp_dim=128,  # Use the same value as the init_features in the UNet
             pool="cls",
-            channels=in_channels,
+            channels=3,  # Set to the number of input channels in the UNet
         )
-        self.linear = nn.Linear(768, features)
+        self.linear = nn.Linear(32, features)
 
     def forward(self, x):
         x = self.vit(x)
