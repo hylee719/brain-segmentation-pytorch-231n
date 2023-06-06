@@ -55,7 +55,9 @@ def main(args):
     )
 
     dsc_dist = dsc_distribution(volumes)
-
+    print("print dsc dist: ")
+    for key, value in dsc_dist.items():
+        print(key, value)
     dsc_dist_plot = plot_dsc(dsc_dist)
     imsave(args.figure, dsc_dist_plot)
 
