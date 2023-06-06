@@ -109,19 +109,23 @@ class ViTEncoder(nn.Module):
         self.vit = ViT(
             image_size=256,
             patch_size=16,
-            num_classes=1000,
-            dim=768,
+            num_classes=features,
+            dim=features,
             depth=12,
             heads=12,
             mlp_dim=3072,
             pool="cls",
             channels=in_channels,
         )
-        self.linear = nn.Linear(768, features)
+        self.linear = nn.Linear(features, features*4)
 
     def forward(self, x):
         x = self.vit(x)
+        print("SHAPE after VIT forward:", x.shape)
         x = self.linear(x)
+        print("Shape after VIT linear layer:", x.shape)
+        x = torch.reshape(x, (-1, 3, 32, 32))
+        print("Shape after VIT reshape:", x.shape)
         return x
 
 
@@ -167,10 +171,15 @@ class UNet(nn.Module):
         )
 
     def forward(self, x):
+        print("Starting shape:", x.shape)
         enc1 = self.encoder1(x)
+        print("SHAPE AFTER ENC1:", enc1.shape)
         enc2 = self.encoder2(self.pool1(enc1))
+        print("SHAPE AFTER ENC2:", enc2.shape)
         enc3 = self.encoder3(self.pool2(enc2))
+        print("SHAPE AFTER ENC3:", enc3.shape)
         enc4 = self.encoder4(self.pool3(enc3))
+        print("SHAPE AFTER ENC4:", enc4.shape)
 
         bottleneck = self.bottleneck(self.pool4(enc4))
 
