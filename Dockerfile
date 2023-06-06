@@ -30,6 +30,7 @@ RUN pip3 install --upgrade pip
 
 RUN pip3 install torch==1.9.0
 RUN pip3 install torchvision==0.9.1
+RUN pip3 install vit-pytorch
 
 WORKDIR /workspace
 
