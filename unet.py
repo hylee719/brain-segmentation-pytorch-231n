@@ -358,49 +358,55 @@ class UNet(nn.Module):
         self.decoder1 = UNet._block(features * 2, features, name="dec1")
 
         self.conv = nn.Conv2d(
-            in_channels=features, out_channels=out_channels, kernel_size=1
+            in_channels=features // 8, out_channels=out_channels, kernel_size=1
         )
+        self.encoder5 = UNet._block(features, features // 8, name="enc4")
+        self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
-        print("shape before enc1: ", x.shape)
+       # print("shape before enc1: ", x.shape)
         enc1 = self.encoder1(x)
-        print("shape before pool1: ", enc1.shape)
+      #  print("shape before pool1: ", enc1.shape)
         pool1 = self.pool1(enc1)
-        print("shape before enc2: ", pool1.shape)
+       # print("shape before enc2: ", pool1.shape)
         enc2 = self.encoder2(pool1)
-        print("shape before pool2: ", enc2.shape)
+
+      #  print("shape before pool2: ", enc2.shape)
         pool2 = self.pool2(enc2)
-        print("shape before enc3: ", pool2.shape)
+      #  print("shape before enc3: ", pool2.shape)
         enc3 = self.encoder3(pool2)
-        print("shape before pool3: ", enc3.shape)
+      #  print("shape before pool3: ", enc3.shape)
         pool3 = self.pool3(enc3)
-        print("shape before enc4: ", pool3.shape)
+      #  print("shape before enc4: ", pool3.shape)
         enc4 = self.encoder4(pool3)
-        print("shape before pool4: ", enc4.shape)
+      #  print("shape before pool4: ", enc4.shape)
         pool4 = self.pool4(enc4)
-        print("shape before bottleneck: ", pool4.shape)
+      #  print("shape before bottleneck: ", pool4.shape)
 
         bottleneck = self.bottleneck(pool4)
-        print("shape before upconv4: ", bottleneck.shape)
+       # print("shape before upconv4: ", bottleneck.shape)
 
         dec4 = self.upconv4(bottleneck)
         dec4 = torch.cat((dec4, enc4), dim=1)
         dec4 = self.decoder4(dec4)
-        print("shape before upconv3: ", dec4.shape)
+       # print("shape before upconv3: ", dec4.shape)
         dec3 = self.upconv3(dec4)
         dec3 = torch.cat((dec3, enc3), dim=1)
         dec3 = self.decoder3(dec3)
-        print("shape before upconv2: ", dec3.shape)
+       # print("shape before upconv2: ", dec3.shape)
         dec2 = self.upconv2(dec3)
         dec2 = torch.cat((dec2, enc2), dim=1)
         dec2 = self.decoder2(dec2)
-        print("shape before dec2: ", dec2.shape)
+       # print("shape before dec2: ", dec2.shape)
         dec1 = self.upconv1(dec2)
         dec1 = torch.cat((dec1, enc1), dim=1)
         dec1 = self.decoder1(dec1)
-        print("shape before final conv and sigmoid: ", dec1.shape)
+        dec0 = self.encoder5(dec1)
+        dec0 = self.pool5(dec0)
+        print("shape before final conv and sigmoid: ",
+              dec0.shape)  # 16, 256, 256, 256
 
-        return torch.sigmoid(self.conv(dec1))
+        return torch.sigmoid(self.conv(dec0))
 
     @staticmethod
     def _block(in_channels, features, name):
