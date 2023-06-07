@@ -54,8 +54,9 @@
 #        enc4 = self.encoder4(self.pool3(enc3))
 #
 #        bottleneck = self.bottleneck(self.pool4(enc4))
-#
+#        print('shape after bottleneck (needed):', bottleneck.shape)
 #        dec4 = self.upconv4(bottleneck)
+#        print('shape after dec4:', dec4.shape)
 #        dec4 = torch.cat((dec4, enc4), dim=1)
 #        dec4 = self.decoder4(dec4)
 #        dec3 = self.upconv3(dec4)
@@ -67,6 +68,7 @@
 #        dec1 = self.upconv1(dec2)
 #        dec1 = torch.cat((dec1, enc1), dim=1)
 #        dec1 = self.decoder1(dec1)
+#        print("shape after dec1 (Final):", dec1.shape)
 #        return torch.sigmoid(self.conv(dec1))
 #
 #    @staticmethod
@@ -101,10 +103,10 @@
 #                ]
 #            )
 #        )
-#
+
 from collections import OrderedDict
-import torch
 import torch.nn as nn
+import torch
 from vit_pytorch import ViT
 #
 #
@@ -115,7 +117,7 @@ class ViTEncoder(nn.Module):
         self.vit = ViT(
             image_size=256,
             patch_size=16,
-            num_classes=features * 256 * 256,
+            num_classes=256,
             dim=features,
             depth=12,
             heads=12,
@@ -134,7 +136,6 @@ class ViTEncoder(nn.Module):
         x = torch.reshape(x, (-1, self.features, 256, 256))
         #print("Shape after VIT reshape:", x.shape)
         return x
-
 
 class UNet(nn.Module):
     def __init__(self, in_channels=3, out_channels=1, init_features=32):
