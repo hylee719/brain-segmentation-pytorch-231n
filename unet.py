@@ -319,33 +319,33 @@ import torch
 import torch.nn as nn
 
 
-class ReversedUNet(nn.Module):
+class UNet(nn.Module):
     def __init__(self, in_channels=3, out_channels=1, init_features=32):
-        super(ReversedUNet, self).__init__()
+        super(UNet, self).__init__()
 
         features = init_features
         self.upconv1 = nn.ConvTranspose2d(
-            in_channels, features, kernel_size=2, stride=2
+            in_channels, features * 8, kernel_size=2, stride=2
         )
-        self.decoder1 = ReversedUNet._block(in_channels, features, name="dec1")
+        self.decoder1 = UNet._block(features * 16, features * 8, name="dec1")
         self.upconv2 = nn.ConvTranspose2d(
-            features, features * 2, kernel_size=2, stride=2
+            features * 8, features * 4, kernel_size=2, stride=2
         )
-        self.decoder2 = ReversedUNet._block(
-            features, features * 2, name="dec2")
+        self.decoder2 = UNet._block(
+            features * 8, features * 4, name="dec2")
         self.upconv3 = nn.ConvTranspose2d(
-            features * 2, features * 4, kernel_size=2, stride=2
+            features * 4, features * 2, kernel_size=2, stride=2
         )
-        self.decoder3 = ReversedUNet._block(
-            features * 2, features * 4, name="dec3")
+        self.decoder3 = UNet._block(
+            features * 4, features * 2, name="dec3")
         self.upconv4 = nn.ConvTranspose2d(
-            features * 4, features * 8, kernel_size=2, stride=2
+            features * 2, features, kernel_size=2, stride=2
         )
-        self.decoder4 = ReversedUNet._block(
-            features * 4, features * 8, name="dec4")
+        self.decoder4 = UNet._block(
+            features * 2, features, name="dec4")
 
-        self.bottleneck = ReversedUNet._block(
-            features * 8, features * 16, name="bottleneck")
+        self.bottleneck = UNet._block(
+            features, features, name="bottleneck")
 
         self.conv = nn.Conv2d(
             in_channels=features, out_channels=out_channels, kernel_size=1
@@ -397,3 +397,25 @@ class ReversedUNet(nn.Module):
                 ]
             )
         )
+
+
+# Traceback (most recent call last):
+#   File "train.py", line 255, in <module>
+#     main(args)
+#   File "train.py", line 62, in main
+#     y_pred = unet(x)
+#   File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+#     return forward_call(*input, **kwargs)
+#   File "/workspace/unet.py", line 356, in forward
+#     dec1 = self.decoder1(dec1)
+#   File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+#     return forward_call(*input, **kwargs)
+#   File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/container.py", line 141, in forward
+#     input = module(input)
+#   File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+#     return forward_call(*input, **kwargs)
+#   File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/conv.py", line 446, in forward
+#     return self._conv_forward(input, self.weight, self.bias)
+#   File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/conv.py", line 443, in _conv_forward
+#     self.padding, self.dilation, self.groups)
+# RuntimeError: Given groups=1, weight of size [32, 3, 3, 3], expected input[16, 32, 512, 512] to have 3 channels, but got 32 channels instead
