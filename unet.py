@@ -107,42 +107,44 @@
 from collections import OrderedDict
 import torch.nn as nn
 import torch
+from transformers import ViTConfig, ViTModel
 from vit_pytorch import ViT
 #
 #
-class ViTEncoder(nn.Module):
-    def __init__(self, in_channels=3, features=32):
-        super(ViTEncoder, self).__init__()
-        self.features = features
-        self.vit = ViT(
-            image_size=256,
-            patch_size=16,
-            num_classes=256,
-            dim=features,
-            depth=12,
-            heads=12,
-            mlp_dim=features*4,
-            pool="cls",
-            channels=in_channels,
-        )
-        #self.linear = nn.Linear(features * 256 * 256, features * 256 * 256)
-
-    def forward(self, x):
-        x = self.vit(x)
-        #print("SHAPE after VIT forward:", x.shape)
-        #x = self.linear(x)
-        #print("Shape after VIT linear layer:", x.shape)
-        #x = torch.reshape(x, (16, self.features, 256, 256))
-        x = torch.reshape(x, (-1, self.features, 256, 256))
-        #print("Shape after VIT reshape:", x.shape)
-        return x
+#class ViTEncoder(nn.Module):
+#    def __init__(self, in_channels=3, features=32):
+#        super(ViTEncoder, self).__init__()
+#        self.features = features
+#        self.vit = ViT(
+#            image_size=256,
+#            patch_size=16,
+#            num_classes=256,
+#            dim=features,
+#            depth=12,
+#            heads=12,
+#            mlp_dim=features*4,
+#            pool="cls",
+#            channels=in_channels,
+#        )
+#        #self.linear = nn.Linear(features * 256 * 256, features * 256 * 256)
+#
+#    def forward(self, x):
+#        x = self.vit(x)
+#        #print("SHAPE after VIT forward:", x.shape)
+#        #x = self.linear(x)
+#        #print("Shape after VIT linear layer:", x.shape)
+#        #x = torch.reshape(x, (16, self.features, 256, 256))
+#        x = torch.reshape(x, (-1, self.features, 256, 256))
+#        #print("Shape after VIT reshape:", x.shape)
+#        return x
 
 class UNet(nn.Module):
     def __init__(self, in_channels=3, out_channels=1, init_features=32):
         super(UNet, self).__init__()
 
         features = init_features
-        self.encoder1 = ViTEncoder(in_channels, features)
+        #self.encoder1 = ViTEncoder(in_channels, features)
+        self.encoder1 = UNet._block(in_channels, features, name="enc1")
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.encoder2 = UNet._block(features, features * 2, name="enc2")
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -177,6 +179,13 @@ class UNet(nn.Module):
         self.conv = nn.Conv2d(
             in_channels=features, out_channels=out_channels, kernel_size=1
         )
+        config = ViTConfig.from_pretrained("google/vit-base-patch16-224-in21k")
+        config.image_size = 16
+        config.num_attention_heads = 16
+        config.hidden_size = 512
+        config.patch_size = 1
+        config.num_channels = 512
+        self.vit = ViTModel(config, add_pooling_layer=False)
 
     def forward(self, x):
        # print("Starting shape:", x.shape)
@@ -190,6 +199,12 @@ class UNet(nn.Module):
        # print("SHAPE AFTER ENC4:", enc4.shape)
 
         bottleneck = self.bottleneck(self.pool4(enc4))
+        
+        # vit for bottleneck
+        #print('shape directly before vit:', bottleneck.shape)
+        bottleneck = self.vit(bottleneck)
+        #print('shape directly after vit:', bottleneck.last_hidden_state.shape)
+        bottleneck = bottleneck.last_hidden_state[:, 1:].view(-1, 512, 16, 16)
 
         dec4 = self.upconv4(bottleneck)
         dec4 = torch.cat((dec4, enc4), dim=1)

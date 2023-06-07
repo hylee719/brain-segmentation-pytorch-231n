@@ -31,7 +31,11 @@ RUN pip3 install --upgrade pip
 RUN pip3 install torch==1.9.0
 RUN pip3 install torchvision==0.9.1
 RUN pip3 install vit-pytorch
-RUN pip3 install transformers
+RUN pip3 install numpy -U
+RUN pip3 install transformers -U
+RUN pip3 install torchmetrics
+RUN pip3 install scikit-image
+RUN pip3 install scikit-learn
 WORKDIR /workspace
 
 COPY requirements.txt ./

@@ -1,5 +1,9 @@
 import argparse
+import torchmetrics
+from torchmetrics import Accuracy, Precision, JaccardIndex
 import os
+
+from sklearn.metrics import accuracy_score, precision_score
 
 import numpy as np
 import torch
@@ -21,6 +25,17 @@ def main(args):
 
     loader = data_loader(args)
 
+    accs, precs, iou = [], [], []
+    
+    def jaccard(list1, list2):
+        intersection = len(list(set(list1).intersection(list2)))
+        union = (len(list1) + len(list2)) - intersection
+        return float(intersection) / union
+
+    acc = Accuracy(task='binary', threshold=0.5, num_classes=2)
+    prec = Precision(task='binary', threshold=0.5, num_classes=2)
+    jacc = JaccardIndex(task='binary', threshold=0.5, num_classes=2)
+    
     with torch.set_grad_enabled(False):
         unet = UNet(in_channels=Dataset.in_channels, out_channels=Dataset.out_channels)
         state_dict = torch.load(args.weights, map_location=device)
@@ -31,7 +46,7 @@ def main(args):
         input_list = []
         pred_list = []
         true_list = []
-
+    
         for i, data in tqdm(enumerate(loader)):
             x, y_true = data
             x, y_true = x.to(device), y_true.to(device)
@@ -45,6 +60,19 @@ def main(args):
 
             x_np = x.detach().cpu().numpy()
             input_list.extend([x_np[s] for s in range(x_np.shape[0])])
+            
+            # calculate new metrics
+            #print('list of trues:', true_list)
+            #accs.append(accuracy_score(y_true_np, y_pred_np))
+            #precs.append(precision_score(y_true_np, y_pred_np))
+            #precs = prec(torch.tensor(pred_list).long(), torch.tensor(true_list).long())
+            iou.append(jaccard(y_true_np.flatten(), y_pred_np.flatten()))
+    #accs = torch.tensor(accs)
+    #precs = torch.tensor(precs)
+    #iou = torch.tensor(iou)
+    #print("Accuracy: ", mean(accs))
+    #print("Prec: ", mean(precs))
+    print("Mean IoU: ", np.mean(iou))
 
     volumes = postprocess_per_volume(
         input_list,
@@ -53,7 +81,7 @@ def main(args):
         loader.dataset.patient_slice_index,
         loader.dataset.patients,
     )
-
+    
     dsc_dist = dsc_distribution(volumes)
     print("print dsc dist: ")
     for key, value in dsc_dist.items():
