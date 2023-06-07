@@ -352,14 +352,23 @@ class UNet(nn.Module):
         )
 
     def forward(self, x):
+        print("shape before upconv1: ", x.shape)
         dec1 = self.upconv1(x)
+        print("shape before decoder1: ", dec1.shape)
         dec1 = self.decoder1(dec1)
+        print("shape before upconv2: ", dec1.shape)
         dec2 = self.upconv2(dec1)
+        print("shape before decoder2: ", dec2.shape)
         dec2 = self.decoder2(dec2)
+        print("shape before upconv3: ", dec2.shape)
         dec3 = self.upconv3(dec2)
+        print("shape before decoder3: ", dec3.shape)
         dec3 = self.decoder3(dec3)
+        print("shape before upconv4: ", dec3.shape)
         dec4 = self.upconv4(dec3)
+        print("shape before decoder4: ", dec4.shape)
         dec4 = self.decoder4(dec4)
+        print("shape before bottleneck: ", dec4.shape)
 
         bottleneck = self.bottleneck(dec4)
 
