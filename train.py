@@ -185,7 +185,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=16,
+        default=4,
         help="input batch size for training (default: 16)",
     )
     parser.add_argument(
