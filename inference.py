@@ -1,5 +1,9 @@
 import argparse
+import torchmetrics
+from torchmetrics import Accuracy, Precision, JaccardIndex
 import os
+
+from sklearn.metrics import accuracy_score, precision_score
 
 import numpy as np
 import torch
@@ -12,7 +16,7 @@ from tqdm import tqdm
 
 from dataset import BrainSegmentationDataset as Dataset
 from unet import UNet
-from utils import dsc, gray2rgb, outline
+from utils import jaccard, dsc, gray2rgb, outline
 
 
 def main(args):
@@ -20,6 +24,18 @@ def main(args):
     device = torch.device("cpu" if not torch.cuda.is_available() else args.device)
 
     loader = data_loader(args)
+
+    accs, precs, iou = [], [], []
+
+    def jaccarrd(list1, list2):
+        intersection = torch.logical_and(y_true, y_pred)
+        union = torch.logical_or(y_true, y_pred)
+        jaccard_index = torch.sum(intersection).item() / torch.sum(union).item()
+        return jaccard_index
+
+    acc = Accuracy(task='binary', threshold=0.5, num_classes=2)
+    prec = Precision(task='binary', threshold=0.5, num_classes=2)
+    jacc = JaccardIndex(task='binary', threshold=0.5, num_classes=2)
 
     with torch.set_grad_enabled(False):
         unet = UNet(in_channels=Dataset.in_channels, out_channels=Dataset.out_channels)
@@ -45,6 +61,12 @@ def main(args):
 
             x_np = x.detach().cpu().numpy()
             input_list.extend([x_np[s] for s in range(x_np.shape[0])])
+
+            # calculate new metrics
+    #for x in range(len(pred_list)):
+    #    iou.append(jaccard(pred_list[x], true_list[x]))
+    #print(iou)
+    #print("Mean IoU: ", np.mean(iou))
 
     volumes = postprocess_per_volume(
         input_list,
@@ -107,10 +129,14 @@ def postprocess_per_volume(
 
 def dsc_distribution(volumes):
     dsc_dict = {}
+    jaccards = []
     for p in volumes:
         y_pred = volumes[p][1]
         y_true = volumes[p][2]
+        jaccards.append(jaccard(y_pred, y_true, lcc=False))
         dsc_dict[p] = dsc(y_pred, y_true, lcc=False)
+    print("mean iou:", np.mean(jaccards))
+    print(jaccards)
     return dsc_dict
 
 

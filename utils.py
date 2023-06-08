@@ -11,6 +11,10 @@ def dsc(y_pred, y_true, lcc=True):
         y_pred = largest_connected_component(y_pred)
     return np.sum(y_pred[y_true == 1]) * 2.0 / (np.sum(y_pred) + np.sum(y_true))
 
+def jaccard(y_pred, y_true, lcc=True):
+    intersection = np.logical_and(y_pred, y_true)
+    union = np.logical_or(y_pred, y_true)
+    return np.sum(intersection) / np.sum(union)
 
 def crop_sample(x):
     volume, mask = x
