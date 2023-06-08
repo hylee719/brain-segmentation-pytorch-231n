@@ -180,16 +180,35 @@ class UNet(nn.Module):
             in_channels=features, out_channels=out_channels, kernel_size=1
         )
         config = ViTConfig.from_pretrained("google/vit-base-patch16-224-in21k")
-        config.image_size = 16
+        # ENCODER CONFIGS
+        config.image_size = 256
         config.num_attention_heads = 16
-        config.hidden_size = 512
-        config.patch_size = 1
-        config.num_channels = 512
+        config.hidden_size = 768
+        config.num_channels = 3
+        config.patch_size = 16
+
+        # BOTTLENECK CONFIGS
+        #config.image_size = 16
+        #config.num_attention_heads = 16
+        #config.hidden_size = 512
+        #config.patch_size = 1
+        #config.num_channels = 512
+
+        # DECODER CONFIGS
+        #config.image_size = 128
+        #config.patch_size = 2
+        #config.num_attention_heads = 16
+        #config.num_channels = 64
+        #config.hidden_size = 256
         self.vit = ViTModel(config, add_pooling_layer=False)
 
     def forward(self, x):
        # print("Starting shape:", x.shape)
-        enc1 = self.encoder1(x)
+       # enc1 = self.encoder1(x)
+       # test encoder vit
+        enc1 = self.vit(x)
+        enc1 = enc1.last_hidden_state[:, 1:].view(-1, 3, 256, 256)
+        enc1 = self.encoder1(enc1)
        # print("SHAPE AFTER ENC1:", enc1.shape)
         enc2 = self.encoder2(self.pool1(enc1))
        # print("SHAPE AFTER ENC2:", enc2.shape)
@@ -201,10 +220,8 @@ class UNet(nn.Module):
         bottleneck = self.bottleneck(self.pool4(enc4))
         
         # vit for bottleneck
-        #print('shape directly before vit:', bottleneck.shape)
-        bottleneck = self.vit(bottleneck)
-        #print('shape directly after vit:', bottleneck.last_hidden_state.shape)
-        bottleneck = bottleneck.last_hidden_state[:, 1:].view(-1, 512, 16, 16)
+        #bottleneck = self.vit(bottleneck)
+        #bottleneck = bottleneck.last_hidden_state[:, 1:].view(-1, 512, 16, 16)
 
         dec4 = self.upconv4(bottleneck)
         dec4 = torch.cat((dec4, enc4), dim=1)
@@ -215,6 +232,9 @@ class UNet(nn.Module):
         dec2 = self.upconv2(dec3)
         dec2 = torch.cat((dec2, enc2), dim=1)
         dec2 = self.decoder2(dec2)
+        #dec2 = self.vit(dec2)
+        #print("shape after dec2 vit:", dec2.shape)
+        #dec2 = dec2.last_hidden_state[:, 1:].view(-1, 64, 128, 128)
         dec1 = self.upconv1(dec2)
         dec1 = torch.cat((dec1, enc1), dim=1)
         dec1 = self.decoder1(dec1)

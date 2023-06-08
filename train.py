@@ -20,8 +20,19 @@ def main(args):
     makedirs(args)
     snapshotargs(args)
     device = torch.device("cpu" if not torch.cuda.is_available() else args.device)
-
+    
     loader_train, loader_valid = data_loaders(args)
+    
+    # Move all batches in the training loader to CPU
+    for i, data in enumerate(loader_train):
+        x, y_true = data
+        x, y_true = x.cpu(), y_true.cpu()
+
+    # Move all batches in the validation loader to CPU
+    for i, data in enumerate(loader_valid):
+        x, y_true = data
+        x, y_true = x.cpu(), y_true.cpu()
+
     loaders = {"train": loader_train, "valid": loader_valid}
 
     unet = UNet(in_channels=Dataset.in_channels, out_channels=Dataset.out_channels)
@@ -37,7 +48,6 @@ def main(args):
     loss_valid = []
 
     step = 0
-
     for epoch in tqdm(range(args.epochs), total=args.epochs):
         for phase in ["train", "valid"]:
             if phase == "train":
