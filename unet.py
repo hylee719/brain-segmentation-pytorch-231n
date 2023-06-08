@@ -401,11 +401,11 @@ class UNet(nn.Module):
         dec1 = self.upconv1(dec2)
         dec1 = torch.cat((dec1, enc1), dim=1)
         dec1 = self.decoder1(dec1)
-        print("shape before last encoder: ", dec1.shape)
+        #print("shape before last encoder: ", dec1.shape)
         dec0 = self.encoder5(dec1)
         # dec0 = self.pool5(dec0)
-        print("shape before final conv and sigmoid: ",
-              dec0.shape)  # 16, 256, 256, 256
+        #print("shape before final conv and sigmoid: ",
+        #      dec0.shape)  # 16, 256, 256, 256
 
         return torch.sigmoid(self.conv(dec0))
 
